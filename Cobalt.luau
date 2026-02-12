@@ -1795,15 +1795,19 @@ end)() end,
     [35] = function()local wax,script,require=ImportGlobals(35)local ImportGlobals return (function(...)local UIHelper = {}
 
 local CodeGen = require(script.Parent.Parent.CodeGen.Generator)
-
 function UIHelper.IsMouseOverFrame(Frame: GuiObject, Position: Vector3): boolean
+	if not Frame then
+		return false
+	end
 	local AbsPos, AbsSize = Frame.AbsolutePosition, Frame.AbsoluteSize
+	if not AbsPos or not AbsSize then
+		return false
+	end
 	return Position.X >= AbsPos.X
 		and Position.X <= AbsPos.X + AbsSize.X
 		and Position.Y >= AbsPos.Y
 		and Position.Y <= AbsPos.Y + AbsSize.Y
 end
-
 function UIHelper.IsClickInput(Input: InputObject): boolean
 	return Input.UserInputState == Enum.UserInputState.Begin
 		and (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch)
