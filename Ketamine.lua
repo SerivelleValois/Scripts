@@ -12931,23 +12931,30 @@ end;
 
 -- 悬浮按钮
 task.defer(function()
-    task.wait(2)
+    task.wait(3)
     local gethui = getfenv().gethui
     local container = gethui and gethui() or game:GetService("CoreGui")
-    local ScreenGui = container:FindFirstChild("Ketamine")
+    local ketamineGui = container:FindFirstChild("Ketamine")
     
-    if ScreenGui then
+    if ketamineGui then
+        -- 创建独立的 ScreenGui 用于悬浮按钮
+        local toggleGui = Instance.new("ScreenGui")
+        toggleGui.Name = "KetamineToggle"
+        toggleGui.ResetOnSpawn = false
+        toggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        toggleGui.Parent = container
+        
         local toggleBtn = Instance.new("TextButton")
         toggleBtn.Name = "ToggleUIButton"
         toggleBtn.Size = UDim2.new(0, 50, 0, 50)
-        toggleBtn.Position = UDim2.new(1, -60, 0.5, -25)
+        toggleBtn.Position = UDim2.new(0.5, 25, 0.5, 200)
         toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         toggleBtn.BorderSizePixel = 0
         toggleBtn.Text = "K"
         toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         toggleBtn.TextSize = 24
         toggleBtn.Font = Enum.Font.GothamBold
-        toggleBtn.Parent = container
+        toggleBtn.Parent = toggleGui
         
         local corner = Instance.new("UICorner")
         corner.CornerRadius = UDim.new(0.5, 0)
@@ -12987,14 +12994,14 @@ task.defer(function()
         local uiVisible = true
         toggleBtn.MouseButton1Click:Connect(function()
             uiVisible = not uiVisible
-            ScreenGui.Enabled = uiVisible
+            ketamineGui.Enabled = uiVisible
             toggleBtn.BackgroundColor3 = uiVisible and Color3.fromRGB(40, 40, 45) or Color3.fromRGB(60, 60, 70)
         end)
         
         -- 脚本关闭时清理按钮
-        ScreenGui.AncestryChanged:Connect(function(_, newParent)
+        ketamineGui.AncestryChanged:Connect(function(_, newParent)
             if not newParent then
-                toggleBtn:Destroy()
+                toggleGui:Destroy()
             end
         end)
     end
