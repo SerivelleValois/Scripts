@@ -12932,8 +12932,19 @@ end;
 -- 悬浮按钮
 task.defer(function()
     task.wait(2) -- 等待UI初始化完成
-    local CoreGui = game:GetService("CoreGui")
-    local ScreenGui = CoreGui:FindFirstChild("Ketamine")
+    -- 从多个位置查找 ScreenGui
+    local ScreenGui = nil
+    local gethui = getfenv().gethui
+    if gethui then
+        ScreenGui = gethui():FindFirstChild("Ketamine")
+    end
+    if not ScreenGui then
+        ScreenGui = game:GetService("CoreGui"):FindFirstChild("Ketamine")
+    end
+    if not ScreenGui then
+        ScreenGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("Ketamine")
+    end
+    
     if ScreenGui then
         local mainWindow = ScreenGui:FindFirstChild("Main")
         local toggleBtn = Instance.new("TextButton")
