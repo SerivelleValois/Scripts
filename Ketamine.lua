@@ -12931,10 +12931,20 @@ end;
 
 -- 悬浮按钮
 task.defer(function()
-    task.wait(3)
+    -- 等待 Ketamine ScreenGui 初始化完成
     local gethui = getfenv().gethui
     local container = gethui and gethui() or game:GetService("CoreGui")
-    local ketamineGui = container:FindFirstChild("Ketamine")
+    local ketamineGui = nil
+    
+    -- 循环检测直到 UI 初始化完成
+    local maxAttempts = 100
+    for i = 1, maxAttempts do
+        ketamineGui = container:FindFirstChild("Ketamine")
+        if ketamineGui and ketamineGui:FindFirstChild("Main") then
+            break
+        end
+        task.wait(0.1)
+    end
     
     if ketamineGui then
         -- 创建独立的 ScreenGui 用于悬浮按钮
