@@ -12992,10 +12992,10 @@ task.defer(function()
         end)
         
         -- 脚本关闭时清理按钮
-        local oldDestroy = ScreenGui.Destroy
-        ScreenGui.Destroy = function(...)
-            toggleBtn:Destroy()
-            return oldDestroy(...)
-        end
+        ScreenGui.AncestryChanged:Connect(function(_, newParent)
+            if not newParent then
+                toggleBtn:Destroy()
+            end
+        end)
     end
 end)
