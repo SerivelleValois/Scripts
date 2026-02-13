@@ -12931,88 +12931,94 @@ end;
 
 -- 悬浮按钮
 task.defer(function()
-    -- 等待 Ketamine ScreenGui 初始化完成
+    print("[ToggleBtn] 开始初始化悬浮按钮...")
     local gethui = getfenv().gethui
     local container = gethui and gethui() or game:GetService("CoreGui")
+    print("[ToggleBtn] container类型:", container.ClassName)
+
     local ketamineGui = nil
-    
-    -- 循环检测直到 UI 初始化完成
     local maxAttempts = 100
     for i = 1, maxAttempts do
         ketamineGui = container:FindFirstChild("Ketamine")
         if ketamineGui and ketamineGui:FindFirstChild("Main") then
+            print("[ToggleBtn] 找到Ketamine UI，尝试次数:", i)
             break
         end
         task.wait(0.1)
     end
-    
-    if ketamineGui then
-        -- 创建独立的 ScreenGui 用于悬浮按钮
-        local toggleGui = Instance.new("ScreenGui")
-        toggleGui.Name = "KetamineToggle"
-        toggleGui.ResetOnSpawn = false
-        toggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        toggleGui.Parent = container
-        
-        local toggleBtn = Instance.new("TextButton")
-        toggleBtn.Name = "ToggleUIButton"
-        toggleBtn.Size = UDim2.new(0, 50, 0, 50)
-        toggleBtn.Position = UDim2.new(0.5, 25, 0.5, 200)
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        toggleBtn.BorderSizePixel = 0
-        toggleBtn.Text = "K"
-        toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        toggleBtn.TextSize = 24
-        toggleBtn.Font = Enum.Font.GothamBold
-        toggleBtn.Parent = toggleGui
-        
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0.5, 0)
-        corner.Parent = toggleBtn
-        
-        local stroke = Instance.new("UIStroke")
-        stroke.Color = Color3.fromRGB(80, 80, 90)
-        stroke.Thickness = 2
-        stroke.Parent = toggleBtn
-        
-        -- 拖动功能
-        local dragging = false
-        local dragStart, startPos
-        
-        toggleBtn.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                dragStart = input.Position
-                startPos = toggleBtn.Position
-            end
-        end)
-        
-        toggleBtn.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = false
-            end
-        end)
-        
-        game:GetService("UserInputService").InputChanged:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                local delta = input.Position - dragStart
-                toggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            end
-        end)
-        
-        -- 点击切换 UI
-        local uiVisible = true
-        toggleBtn.MouseButton1Click:Connect(function()
-            uiVisible = not uiVisible
-            ketamineGui.Enabled = uiVisible
-            toggleBtn.BackgroundColor3 = uiVisible and Color3.fromRGB(40, 40, 45) or Color3.fromRGB(60, 60, 70)
-        end)
-        
-        -- 脚本关闭时清理按钮
-        ketamineGui.AncestryChanged:Connect(function(_, newParent)
-            if not newParent then
-                toggleGui:Destroy()
-            end
-        end)
+
+    if not ketamineGui then
+        print("[ToggleBtn] 未找到ketamineGui!")
+        return
     end
+
+    print("[ToggleBtn] ketamineGui存在，创建按钮...")
+    local toggleGui = Instance.new("ScreenGui")
+    toggleGui.Name = "KetamineToggle"
+    toggleGui.ResetOnSpawn = false
+    toggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    toggleGui.Parent = container
+    print("[ToggleBtn] toggleGui已创建，Parent:", toggleGui.Parent and toggleGui.Parent.ClassName or "nil")
+
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Name = "ToggleUIButton"
+    toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+    toggleBtn.Position = UDim2.new(0.5, 25, 0.5, 200)
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    toggleBtn.BorderSizePixel = 0
+    toggleBtn.Text = "K"
+    toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleBtn.TextSize = 24
+    toggleBtn.Font = Enum.Font.GothamBold
+    toggleBtn.Parent = toggleGui
+    print("[ToggleBtn] 按钮已创建，Visible:", toggleBtn.Visible, "Position:", toggleBtn.Position)
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0.5, 0)
+    corner.Parent = toggleBtn
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(80, 80, 90)
+    stroke.Thickness = 2
+    stroke.Parent = toggleBtn
+
+    local dragging = false
+    local dragStart, startPos
+
+    toggleBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = toggleBtn.Position
+        end
+    end)
+
+    toggleBtn.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            toggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    local uiVisible = true
+    toggleBtn.MouseButton1Click:Connect(function()
+        uiVisible = not uiVisible
+        ketamineGui.Enabled = uiVisible
+        toggleBtn.BackgroundColor3 = uiVisible and Color3.fromRGB(40, 40, 45) or Color3.fromRGB(60, 60, 70)
+        print("[ToggleBtn] UI切换:", uiVisible)
+    end)
+
+    ketamineGui.AncestryChanged:Connect(function(_, newParent)
+        if not newParent then
+            toggleGui:Destroy()
+            print("[ToggleBtn] 按钮已清理")
+        end
+    end)
+    print("[ToggleBtn] 初始化完成")
 end)
