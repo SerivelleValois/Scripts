@@ -12930,9 +12930,12 @@ end)
 end;
 
 -- 悬浮按钮
-do
-    local ScreenGui = script.Parent.Parent
-    if ScreenGui and ScreenGui:IsA("ScreenGui") then
+task.defer(function()
+    task.wait(2) -- 等待UI初始化完成
+    local CoreGui = game:GetService("CoreGui")
+    local ScreenGui = CoreGui:FindFirstChild("Ketamine")
+    if ScreenGui then
+        local mainWindow = ScreenGui:FindFirstChild("Main")
         local toggleBtn = Instance.new("TextButton")
         toggleBtn.Name = "ToggleUIButton"
         toggleBtn.Size = UDim2.new(0, 50, 0, 50)
@@ -12983,9 +12986,8 @@ do
         local uiVisible = true
         toggleBtn.MouseButton1Click:Connect(function()
             uiVisible = not uiVisible
-            script.Parent.Visible = uiVisible
-            toggleBtn.Text = uiVisible and "K" or "K"
+            if mainWindow then mainWindow.Visible = uiVisible end
             toggleBtn.BackgroundColor3 = uiVisible and Color3.fromRGB(40, 40, 45) or Color3.fromRGB(60, 60, 70)
         end)
     end
-end
+end)
