@@ -12931,22 +12931,12 @@ end;
 
 -- 悬浮按钮
 task.defer(function()
-    task.wait(2) -- 等待UI初始化完成
-    -- 从多个位置查找 ScreenGui
-    local ScreenGui = nil
+    task.wait(2)
     local gethui = getfenv().gethui
-    if gethui then
-        ScreenGui = gethui():FindFirstChild("Ketamine")
-    end
-    if not ScreenGui then
-        ScreenGui = game:GetService("CoreGui"):FindFirstChild("Ketamine")
-    end
-    if not ScreenGui then
-        ScreenGui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("Ketamine")
-    end
+    local container = gethui and gethui() or game:GetService("CoreGui")
+    local ScreenGui = container:FindFirstChild("Ketamine")
     
     if ScreenGui then
-        local mainWindow = ScreenGui:FindFirstChild("Main")
         local toggleBtn = Instance.new("TextButton")
         toggleBtn.Name = "ToggleUIButton"
         toggleBtn.Size = UDim2.new(0, 50, 0, 50)
@@ -12957,7 +12947,7 @@ task.defer(function()
         toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         toggleBtn.TextSize = 24
         toggleBtn.Font = Enum.Font.GothamBold
-        toggleBtn.Parent = ScreenGui
+        toggleBtn.Parent = container
         
         local corner = Instance.new("UICorner")
         corner.CornerRadius = UDim.new(0.5, 0)
@@ -12997,8 +12987,15 @@ task.defer(function()
         local uiVisible = true
         toggleBtn.MouseButton1Click:Connect(function()
             uiVisible = not uiVisible
-            if mainWindow then mainWindow.Visible = uiVisible end
+            ScreenGui.Enabled = uiVisible
             toggleBtn.BackgroundColor3 = uiVisible and Color3.fromRGB(40, 40, 45) or Color3.fromRGB(60, 60, 70)
         end)
+        
+        -- 脚本关闭时清理按钮
+        local oldDestroy = ScreenGui.Destroy
+        ScreenGui.Destroy = function(...)
+            toggleBtn:Destroy()
+            return oldDestroy(...)
+        end
     end
 end)
