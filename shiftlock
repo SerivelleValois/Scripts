@@ -102,7 +102,7 @@ local function SetShiftLock(enabled)
             local horizontal = math.cos(CameraPitch) * CameraDistance
             local cameraPosition = focusPosition + Vector3.new(
                 -math.sin(CameraYaw) * horizontal,
-                math.sin(CameraPitch) * CameraDistance,
+                -math.sin(CameraPitch) * CameraDistance,
                 -math.cos(CameraYaw) * horizontal
             )
             cam.CFrame = CFrame.lookAt(cameraPosition, focusPosition)
