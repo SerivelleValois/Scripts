@@ -96,7 +96,7 @@ local function SetShiftLock(enabled)
             currentHumanoid.CameraOffset = EnabledOffset.Position
             local delta = UserInputService:GetMouseDelta()
             CameraYaw = CameraYaw - delta.X * CameraSensitivity
-            CameraPitch = math.clamp(CameraPitch + delta.Y * CameraSensitivity, -1.35, 1.35)
+            CameraPitch = math.clamp(CameraPitch - delta.Y * CameraSensitivity, -1.35, 1.35)
 
             local focusPosition = hrp.Position + CameraFocusOffset
             local horizontal = math.cos(CameraPitch) * CameraDistance
