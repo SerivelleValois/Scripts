@@ -1,0 +1,110 @@
+-- Infinity HH (ShiftLock only)
+
+local ShiftLockScreenGui = Instance.new("ScreenGui")
+local ShiftLockButton = Instance.new("ImageButton")
+local ShiftlockCursor = Instance.new("ImageLabel")
+
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local ContextActionService = game:GetService("ContextActionService")
+local UserInputService = game:GetService("UserInputService")
+local Player = Players.LocalPlayer
+
+local States = {
+    Off = "rbxasset://textures/ui/mouseLock_off@2x.png",
+    On = "rbxasset://textures/ui/mouseLock_on@2x.png",
+    Lock = "rbxasset://textures/MouseLockedCursor.png",
+    Lock2 = "rbxasset://SystemCursors/Cross"
+}
+
+local MaxLength = 900000
+local EnabledOffset = CFrame.new(1.7, 0, 0)
+local DisabledOffset = CFrame.new(-1.7, 0, 0)
+local Active
+
+-- GUI Setup
+ShiftLockScreenGui.Name = "infinity HH"
+ShiftLockScreenGui.Parent = CoreGui
+ShiftLockScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ShiftLockScreenGui.ResetOnSpawn = false
+
+ShiftLockButton.Parent = ShiftLockScreenGui
+ShiftLockButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ShiftLockButton.BackgroundTransparency = 1
+ShiftLockButton.Position = UDim2.new(0.82, 0, 0.88, 0)
+ShiftLockButton.Size = UDim2.new(0.05, 0, 0.05, 0)
+ShiftLockButton.SizeConstraint = Enum.SizeConstraint.RelativeXX
+ShiftLockButton.Image = States.Off
+
+ShiftlockCursor.Name = "Shiftlock Cursor"
+ShiftlockCursor.Parent = ShiftLockScreenGui
+ShiftlockCursor.Image = States.Lock
+ShiftlockCursor.Size = UDim2.new(0.03, 0, 0.03, 0)
+ShiftlockCursor.Position = UDim2.new(0.5, 0, 0.5, 0)
+ShiftlockCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+ShiftlockCursor.SizeConstraint = Enum.SizeConstraint.RelativeXX
+ShiftlockCursor.BackgroundTransparency = 1
+ShiftlockCursor.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+ShiftlockCursor.Visible = false
+
+-- Button click toggle
+ShiftLockButton.MouseButton1Click:Connect(function()
+    if not Active then
+        Active = RunService.RenderStepped:Connect(function()
+            if not Player.Character or not Player.Character:FindFirstChild("Humanoid") or not Player.Character:FindFirstChild("HumanoidRootPart") then
+                return
+            end
+
+            Player.Character.Humanoid.AutoRotate = false
+            ShiftLockButton.Image = States.On
+            ShiftlockCursor.Visible = true
+
+            local hrp = Player.Character.HumanoidRootPart
+            local cam = workspace.CurrentCamera
+
+            hrp.CFrame = CFrame.new(
+                hrp.Position,
+                Vector3.new(
+                    cam.CFrame.LookVector.X * MaxLength,
+                    hrp.Position.Y,
+                    cam.CFrame.LookVector.Z * MaxLength
+                )
+            )
+
+            cam.CFrame = cam.CFrame * EnabledOffset
+            cam.Focus = CFrame.fromMatrix(
+                cam.Focus.Position,
+                cam.CFrame.RightVector,
+                cam.CFrame.UpVector
+            ) * EnabledOffset
+        end)
+    else
+        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+            Player.Character.Humanoid.AutoRotate = true
+        end
+
+        ShiftLockButton.Image = States.Off
+        local cam = workspace.CurrentCamera
+        cam.CFrame = cam.CFrame * DisabledOffset
+        ShiftlockCursor.Visible = false
+
+        pcall(function()
+            Active:Disconnect()
+            Active = nil
+        end)
+    end
+end)
+
+-- Keyboard shortcut (On key)
+local function ShiftLockAction(_, state)
+    if state == Enum.UserInputState.Begin then
+        ShiftLockButton.MouseButton1Click:Fire()
+    end
+end
+
+local ShiftLockAction = ContextActionService:BindAction("Shift Lock", ShiftLockAction, false, "On")
+ContextActionService:SetPosition("Shift Lock", UDim2.new(0.82, 0, 0.88, 0))
+
+return {} and ShiftLockAction
