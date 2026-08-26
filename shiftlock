@@ -11,13 +11,18 @@ local Player = Players.LocalPlayer
 local States = {
     Off = "rbxasset://textures/ui/mouseLock_off@2x.png",
     On = "rbxasset://textures/ui/mouseLock_on@2x.png",
-    Lock = "rbxasset://textures/MouseLockedCursor.png",
-    Lock2 = "rbxasset://SystemCursors/Cross"
+    Lock = "rbxasset://textures/MouseLockedCursor.png"
 }
 
 local EnabledOffset = CFrame.new(1.7, 0, 0)
 local Active
 local PreviousMouseBehavior
+local PreviousCameraType
+local CameraYaw = 0
+local CameraPitch = 0
+local CameraDistance = 8
+local CameraFocusOffset = Vector3.new(0, 1.5, 0)
+local CameraSensitivity = 0.005
 
 -- GUI Setup
 ShiftLockScreenGui.Name = "ShiftLockGui"
@@ -64,7 +69,20 @@ local function SetShiftLock(enabled)
         ShiftLockButton.Image = States.On
         ShiftlockCursor.Visible = true
 
-        Active = RunService.RenderStepped:Connect(function()
+        local camera = workspace.CurrentCamera
+        local focus = character:FindFirstChild("HumanoidRootPart")
+        if camera and focus then
+            PreviousCameraType = camera.CameraType
+            camera.CameraType = Enum.CameraType.Scriptable
+            local focusPosition = focus.Position + CameraFocusOffset
+            local relative = camera.CFrame.Position - focusPosition
+            CameraDistance = math.max(relative.Magnitude, 2)
+            CameraYaw = math.atan2(-relative.X, -relative.Z)
+            CameraPitch = math.asin(math.clamp(relative.Y / CameraDistance, -0.95, 0.95))
+        end
+
+        Active = true
+        RunService:BindToRenderStep("ShiftLockCamera", Enum.RenderPriority.Camera.Value + 1, function()
             local currentCharacter = Player.Character
             local currentHumanoid = currentCharacter and currentCharacter:FindFirstChildOfClass("Humanoid")
             local hrp = currentCharacter and currentCharacter:FindFirstChild("HumanoidRootPart")
@@ -73,10 +91,22 @@ local function SetShiftLock(enabled)
                 return
             end
 
-            -- Keep the cursor locked so camera rotation does not depend on RMB.
             UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
             currentHumanoid.AutoRotate = false
             currentHumanoid.CameraOffset = EnabledOffset.Position
+            local delta = UserInputService:GetMouseDelta()
+            CameraYaw = CameraYaw - delta.X * CameraSensitivity
+            CameraPitch = math.clamp(CameraPitch - delta.Y * CameraSensitivity, -1.35, 1.35)
+
+            local focusPosition = hrp.Position + CameraFocusOffset
+            local horizontal = math.cos(CameraPitch) * CameraDistance
+            local cameraPosition = focusPosition + Vector3.new(
+                -math.sin(CameraYaw) * horizontal,
+                math.sin(CameraPitch) * CameraDistance,
+                -math.cos(CameraYaw) * horizontal
+            )
+            cam.CFrame = CFrame.lookAt(cameraPosition, focusPosition)
+
             local look = cam.CFrame.LookVector
             hrp.CFrame = CFrame.new(hrp.Position, hrp.Position + Vector3.new(look.X, 0, look.Z))
         end)
@@ -86,12 +116,17 @@ local function SetShiftLock(enabled)
             humanoid.CameraOffset = Vector3.zero
         end
 
+        RunService:UnbindFromRenderStep("ShiftLockCamera")
+        Active = nil
+        local camera = workspace.CurrentCamera
+        if camera and PreviousCameraType then
+            camera.CameraType = PreviousCameraType
+        end
+        PreviousCameraType = nil
         UserInputService.MouseBehavior = PreviousMouseBehavior or Enum.MouseBehavior.Default
         PreviousMouseBehavior = nil
         ShiftLockButton.Image = States.Off
         ShiftlockCursor.Visible = false
-        Active:Disconnect()
-        Active = nil
     end
 end
 
