@@ -1,0 +1,242 @@
+warn("Anti afk running")
+game:GetService("Players").LocalPlayer.Idled:connect(function()
+	warn("Anti afk ran")
+	game:GetService("VirtualUser"):CaptureController()
+	game:GetService("VirtualUser"):ClickButton2(Vector2.new())
+end)
+
+-- ===== 原生 UI =====
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- 清理旧 UI
+local old = playerGui:FindFirstChild("RensselaerCountyUI")
+if old then old:Destroy() end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "RensselaerCountyUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = playerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 260, 0, 190)
+mainFrame.Position = UDim2.new(0, 30, 0, 120)
+mainFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 32)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 8)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(70, 70, 80)
+stroke.Thickness = 1
+stroke.Parent = mainFrame
+
+-- ===== 移动端 / PC 通用拖拽 =====
+do
+	local dragging = false
+	local dragStart, startPos
+
+	local function update(input)
+		local delta = input.Position - dragStart
+		mainFrame.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+
+	mainFrame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = mainFrame.Position
+		end
+	end)
+
+	mainFrame.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
+
+	UIS.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+			or input.UserInputType == Enum.UserInputType.Touch) then
+			update(input)
+		end
+	end)
+end
+
+-- 标题（用于视觉分区，也可作为拖拽把手）
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 36)
+title.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+title.BorderSizePixel = 0
+title.Text = "Rensselaer County"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 16
+title.Font = Enum.Font.GothamBold
+title.Parent = mainFrame
+Instance.new("UICorner", title).CornerRadius = UDim.new(0, 8)
+
+-- Auto farm 开关
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "AutoFarmToggle"
+toggleBtn.Size = UDim2.new(0, 220, 0, 38)
+toggleBtn.Position = UDim2.new(0, 20, 0, 50)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 68)
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Text = "Auto Farm: OFF"
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.TextSize = 14
+toggleBtn.Font = Enum.Font.Gotham
+toggleBtn.AutoButtonColor = true
+toggleBtn.Parent = mainFrame
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0, 6)
+
+-- 速度标签
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(0, 60, 0, 32)
+speedLabel.Position = UDim2.new(0, 20, 0, 105)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "速度:"
+speedLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+speedLabel.TextSize = 14
+speedLabel.Font = Enum.Font.Gotham
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+speedLabel.Parent = mainFrame
+
+-- 速度输入框
+local speedBox = Instance.new("TextBox")
+speedBox.Name = "SpeedBox"
+speedBox.Size = UDim2.new(0, 140, 0, 32)
+speedBox.Position = UDim2.new(0, 80, 0, 105)
+speedBox.BackgroundColor3 = Color3.fromRGB(50, 50, 58)
+speedBox.BorderSizePixel = 0
+speedBox.Text = "300"
+speedBox.PlaceholderText = "输入速度"
+speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+speedBox.TextSize = 14
+speedBox.Font = Enum.Font.Gotham
+speedBox.ClearTextOnFocus = false
+speedBox.Parent = mainFrame
+Instance.new("UICorner", speedBox).CornerRadius = UDim.new(0, 6)
+
+-- 提示
+local hint = Instance.new("TextLabel")
+hint.Size = UDim2.new(1, -40, 0, 20)
+hint.Position = UDim2.new(0, 20, 0, 150)
+hint.BackgroundTransparency = 1
+hint.Text = "提示: 需先坐入载具再开启"
+hint.TextColor3 = Color3.fromRGB(150, 150, 150)
+hint.TextSize = 11
+hint.Font = Enum.Font.Gotham
+hint.TextXAlignment = Enum.TextXAlignment.Left
+hint.Parent = mainFrame
+
+-- ===== 状态 =====
+local running = false
+local speed = 300
+
+speedBox.FocusLost:Connect(function()
+	local num = tonumber(speedBox.Text)
+	if num and num > 0 then
+		speed = num
+		speedBox.Text = tostring(num)
+	else
+		speedBox.Text = tostring(speed)
+	end
+end)
+
+-- ===== Auto Farm 逻辑 =====
+local function getCar()
+	local plr = Players.LocalPlayer
+	local chr = plr.Character
+	if not chr then return nil, nil end
+	local hum = chr:FindFirstChildOfClass("Humanoid")
+	if not hum or not hum.SeatPart then return nil, chr end
+	local car = hum.SeatPart.Parent
+	return car, chr
+end
+
+local function runFarm()
+	local car, chr = getCar()
+	if not car or not chr then
+		warn("[AutoFarm] 未检测到载具，请先坐入驾驶座")
+		running = false
+		toggleBtn.Text = "Auto Farm: OFF"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 68)
+		return
+	end
+
+	-- 设置 PrimaryPart
+	if car:FindFirstChild("Body") and car.Body:FindFirstChild("#Weight") then
+		car.PrimaryPart = car.Body["#Weight"]
+	else
+		car.PrimaryPart = car:FindFirstChildWhichIsA("BasePart")
+	end
+	if not car.PrimaryPart then
+		warn("[AutoFarm] 无法确定车辆 PrimaryPart")
+		running = false
+		toggleBtn.Text = "Auto Farm: OFF"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 68)
+		return
+	end
+
+	while running do
+		task.wait()
+		local car, chr = getCar()
+		if not car or not chr or not car.PrimaryPart then
+			running = false
+			break
+		end
+
+		if not workspace:FindFirstChild("justanormalpart") then
+			local new = Instance.new("Part")
+			new.Name = "justanormalpart"
+			new.Anchored = true
+			new.CanCollide = false
+			new.Transparency = 1
+			new.Size = Vector3.new(10000, 10, 10000)
+			new.Position = chr.HumanoidRootPart.Position + Vector3.new(0, 5000, 0)
+			new.Parent = workspace
+		end
+
+		car.PrimaryPart.Velocity = car.PrimaryPart.CFrame.LookVector * speed
+		task.wait(0.3)
+
+		local platform = workspace:FindFirstChild("justanormalpart")
+		if platform then
+			car:PivotTo(platform.CFrame + Vector3.new(0, 7, 0))
+		end
+	end
+
+	-- 关闭时清理
+	if not running then
+		toggleBtn.Text = "Auto Farm: OFF"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 68)
+		local platform = workspace:FindFirstChild("justanormalpart")
+		if platform then platform:Destroy() end
+	end
+end
+
+toggleBtn.MouseButton1Click:Connect(function()
+	running = not running
+	if running then
+		toggleBtn.Text = "Auto Farm: ON"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 70)
+		task.spawn(runFarm)
+	else
+		toggleBtn.Text = "Auto Farm: OFF"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 68)
+	end
+end)
